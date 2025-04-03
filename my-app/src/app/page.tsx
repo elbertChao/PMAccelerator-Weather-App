@@ -126,9 +126,9 @@ const Home: React.FC = () => {
     forecastData.list.forEach((item: any) => {
       const date = new Date(item.dt * 1000);
       const day = date.toLocaleDateString();
-      const hour = date.getHours();
+      const hourUTC = date.getUTCHours();
       // Choose forecast entry near noon (12:00)
-      if (hour === 12) {
+      if (hourUTC === 12) {
         dailyData[day] = item;
       }
     });
