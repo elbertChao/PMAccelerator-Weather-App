@@ -1,0 +1,17 @@
+# Virtual environment directories
+venv/
+.env/
+.venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# env files (can opt-in for committing if needed)
+.env*

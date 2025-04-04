@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 
 const Home: React.FC = () => {
   const [location, setLocation] = useState<string>('');
@@ -8,59 +9,51 @@ const Home: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
-  // The API key must be set in .env.local as NEXT_PUBLIC_OPENWEATHERMAP_API_KEY
-  const API_KEY = process.env.NEXT_PUBLIC_OPENWEATHERMAP_API_KEY;
+  let tempInCelsius: number | null = null;
+  let tempInFahrenheit: number | null = null;
+  let windSpeedInMph: number | null = null;
+  let windSpeedInKmh: number | null = null;
 
-  // Fetch current weather and forecast based on input
+  if (weatherData && weatherData.main && weatherData.wind) {
+    tempInFahrenheit = Math.round(weatherData.main.temp);
+    if (tempInFahrenheit !== null) {
+      tempInCelsius = Math.round((tempInFahrenheit - 32) * (5 / 9));
+    }
+    windSpeedInMph = Math.round(weatherData.wind.speed);
+    if (windSpeedInMph !== null) {
+      windSpeedInKmh = Math.round(windSpeedInMph * 1.60934);
+    }
+  }
+
+  // Fetch weather data from our backend
   const fetchWeather = async (loc: string): Promise<void> => {
     try {
       setLoading(true);
       setError('');
 
-      let urlCurrent = '';
-      let urlForecast = '';
+      // For demonstration, we use today's date as both start and end of the date range.
+      const today = new Date().toISOString().split('T')[0];
+      const body = {
+        location: loc,
+        date_range: { start: today, end: today }
+      };
 
-      // Check input format: coordinates, zip code, or city name.
-      if (loc.includes(',')) {
-        // Expecting "lat,lon"
-        const parts = loc.split(',');
-        if (parts.length === 2) {
-          const lat = parts[0].trim();
-          const lon = parts[1].trim();
-          urlCurrent = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${API_KEY}`;
-          urlForecast = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=imperial&appid=${API_KEY}`;
-        } else {
-          setError("Invalid coordinate format. Use 'lat,lon'.");
-          setLoading(false);
-          return;
-        }
-      } else if (/^\d+$/.test(loc)) {
-        // Only digits – assume ZIP/Postal code.
-        urlCurrent = `https://api.openweathermap.org/data/2.5/weather?zip=${loc}&units=imperial&appid=${API_KEY}`;
-        urlForecast = `https://api.openweathermap.org/data/2.5/forecast?zip=${loc}&units=imperial&appid=${API_KEY}`;
-      } else {
-        // Otherwise, treat input as a city name or landmark.
-        urlCurrent = `https://api.openweathermap.org/data/2.5/weather?q=${loc}&units=imperial&appid=${API_KEY}`;
-        urlForecast = `https://api.openweathermap.org/data/2.5/forecast?q=${loc}&units=imperial&appid=${API_KEY}`;
-      }
+      const res = await fetch('http://localhost:8000/weather', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
 
-      // Fetch current weather
-      const resCurrent = await fetch(urlCurrent);
-      if (!resCurrent.ok) {
-        const data = await resCurrent.json();
-        throw new Error(data.message || 'Error fetching current weather');
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || 'Error fetching weather from backend');
       }
-      const currentData = await resCurrent.json();
-      setWeatherData(currentData);
-
-      // Fetch 5-day forecast
-      const resForecast = await fetch(urlForecast);
-      if (!resForecast.ok) {
-        const data = await resForecast.json();
-        throw new Error(data.message || 'Error fetching forecast');
-      }
-      const forecast = await resForecast.json();
-      setForecastData(forecast);
+      const data = await res.json();
+      // console.log("Forecast data:", data.forecast_data); // DEBUGGING
+      setWeatherData(data.weather_data);
+      setForecastData(data.forecast_data);
     } catch (err: any) {
       setError(err.message);
       setWeatherData(null);
@@ -110,30 +103,42 @@ const Home: React.FC = () => {
           className="w-20 h-20"
         />
         <p className="text-lg">{weatherData.weather[0].description}</p>
-        <p>Temperature: {weatherData.main.temp} °F</p>
+        <p>Temperature: {tempInCelsius} °C | {tempInFahrenheit} °F</p>
         <p>Humidity: {weatherData.main.humidity} %</p>
-        <p>Wind: {weatherData.wind.speed} mph</p>
+        <p>Wind: {windSpeedInKmh} km/h | {windSpeedInMph} mph</p>
       </div>
     );
   };
 
   // Render a 5-day forecast using forecast API data.
-  // Here, we pick one forecast data point per day (typically near noon).
+  // Here, we pick one forecast data point per day (typically near noon UTC).
   const renderForecast = () => {
-    if (!forecastData) return null;
-
+    if (!forecastData || !forecastData.list) return null;
+  
     const dailyData: { [day: string]: any } = {};
+  
     forecastData.list.forEach((item: any) => {
       const date = new Date(item.dt * 1000);
       const day = date.toLocaleDateString();
-      const hourUTC = date.getUTCHours();
-      // Choose forecast entry near noon (12:00)
-      if (hourUTC === 12) {
+      const hour = date.getUTCHours();
+      // If no entry for this day yet, simply set it.
+      if (!dailyData[day]) {
         dailyData[day] = item;
+      } else {
+        // Otherwise, compare which forecast is closer to 12:00 UTC.
+        const currentEntry = dailyData[day];
+        const currentHour = new Date(currentEntry.dt * 1000).getUTCHours();
+        if (Math.abs(hour - 12) < Math.abs(currentHour - 12)) {
+          dailyData[day] = item;
+        }
       }
     });
-
+  
     const days = Object.keys(dailyData);
+    if (days.length === 0) {
+      return <p>No forecast data available.</p>;
+    }
+  
     return (
       <div className="mt-8">
         <h2 className="text-2xl font-bold mb-2">5-Day Forecast</h2>
@@ -150,7 +155,12 @@ const Home: React.FC = () => {
                   className="w-16 h-16 mx-auto"
                 />
                 <p className="text-sm">{item.weather[0].description}</p>
-                <p className="text-sm">Temp: {item.main.temp} °F</p>
+                <p className="text-sm">
+                  Temperature:{" "}
+                    {Math.round((item.main.temp - 32) * (5 / 9))}°C
+                  /{" "}
+                    {Math.round(item.main.temp)}°F
+                </p>
               </div>
             );
           })}
@@ -170,10 +180,7 @@ const Home: React.FC = () => {
           onChange={(e) => setLocation(e.target.value)}
           className="flex-grow p-2 border rounded"
         />
-        <button
-          type="submit"
-          className="ml-2 p-2 bg-blue-500 text-white rounded"
-        >
+        <button type="submit" className="ml-2 p-2 bg-blue-500 text-white rounded">
           Get Weather
         </button>
       </form>
@@ -183,6 +190,11 @@ const Home: React.FC = () => {
       >
         Use My Current Location
       </button>
+      <Link href="/records" legacyBehavior>
+        <a className="block text-center p-2 bg-gray-700 text-white rounded">
+          View Weather Records
+        </a>
+      </Link>
       {loading && <p className="text-center">Loading...</p>}
       {error && <p className="text-center text-red-500">Error: {error}</p>}
       {renderCurrentWeather()}
