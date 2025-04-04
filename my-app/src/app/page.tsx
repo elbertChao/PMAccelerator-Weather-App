@@ -213,6 +213,7 @@ const Home: React.FC = () => {
   return (
     <div className="max-w-lg mx-auto p-4">
       <h1 className="text-3xl font-bold text-center mb-4">Weather App</h1>
+      <h2 className="text-lg font-medium text-center text-gray-300 mb-6">by Elbert Chao</h2>
       <form onSubmit={handleSubmit} className="relative flex mb-4 gap-2">
         <div className="relative flex-grow">
           <input
@@ -275,6 +276,60 @@ const Home: React.FC = () => {
       {renderCurrentWeather()}
       {renderForecast()}
       {renderGoogleMap()}
+      <div className="mt-16 p-6 bg-gray-900 text-white rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold mb-4">📚 Overview</h2>
+        <p className="mb-4">
+          The Product Manager Accelerator Program is designed to support PM professionals through every stage of their careers.
+          From students looking for entry-level jobs to Directors looking to take on a leadership role, our program has helped
+          hundreds of students fulfill their career aspirations.
+        </p>
+        <p className="mb-4">
+          Our Product Manager Accelerator community are ambitious and committed. Through our program they have learnt, honed
+          and developed new PM and leadership skills, giving them a strong foundation for their future endeavors.
+        </p>
+        <p className="mb-4">
+          Here are the examples of services we offer. Check out our website (<a href="https://www.pmaccelerator.io/" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">link</a>)
+          to learn more about our services.
+        </p>
+
+        <ul className="list-disc list-inside space-y-2 mb-4">
+          <li>
+            🚀 <strong>PMA Pro</strong>: End-to-end product manager job hunting program that helps you master FAANG-level Product
+            Management skills, conduct unlimited mock interviews, and gain job referrals through our largest alumni network.
+            25% of our offers came from tier 1 companies and get paid as high as $800K/year.
+          </li>
+          <li>
+            🚀 <strong>AI PM Bootcamp</strong>: Gain hands-on AI Product Management skills by building a real-life AI product
+            with a team of AI Engineers, data scientists, and designers. Launch your product to real users using our 100,000+ PM community.
+          </li>
+          <li>
+            🚀 <strong>PMA Power Skills</strong>: Designed for existing product managers to sharpen their product management,
+            leadership, and executive presentation skills.
+          </li>
+          <li>
+            🚀 <strong>PMA Leader</strong>: Accelerate your career to Director and product executive levels, and win in the boardroom.
+          </li>
+          <li>
+            🚀 <strong>1:1 Resume Review</strong>: We help you rewrite a killer product manager resume that stands out—interview guaranteed.  
+            Get started for free: <a href="https://www.drnancyli.com/pmresume" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">PM Resume Template</a>
+          </li>
+          <li>
+            🚀 <strong>Free Training</strong>: Access 500+ free courses on our 
+            <a href="https://www.youtube.com/c/drnancyli" className="text-blue-400 underline ml-1" target="_blank" rel="noopener noreferrer">YouTube</a> and
+            <a href="https://instagram.com/drnancyli" className="text-blue-400 underline ml-1" target="_blank" rel="noopener noreferrer">Instagram</a>.
+          </li>
+        </ul>
+
+        <div className="text-sm space-y-1">
+          <p><strong>Website:</strong> <a href="https://www.pmaccelerator.io/" className="text-blue-400 underline">pmaccelerator.io</a></p>
+          <p><strong>Phone:</strong> <a href="tel:+19548891063" className="text-blue-400 underline">+1 (954) 889-1063</a></p>
+          <p><strong>Industry:</strong> E-Learning Providers</p>
+          <p><strong>Company size:</strong> 2–10 employees</p>
+          <p><strong>Headquarters:</strong> Boston, MA</p>
+          <p><strong>Founded:</strong> 2020</p>
+          <p><strong>Specialties:</strong> Product Management, Product Lead, Director of Product, Chief Product Officer, AI PM, Resume Reviews, Coaching, and more</p>
+        </div>
+      </div>
     </div>
   );
 };

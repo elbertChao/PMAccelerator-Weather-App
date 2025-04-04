@@ -73,6 +73,18 @@ const RecordsPage: React.FC = () => {
     setUpdatedLocation(record.location);
   };
 
+  const handleDownloadCSV = async () => {
+    const response = await fetch('http://localhost:8000/export/csv');
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'weather.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
   // Update a record, updates location only for now
   const handleUpdate = async (id: string) => {
     try {
@@ -216,6 +228,13 @@ const RecordsPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <button
+        onClick={handleDownloadCSV}
+        className="mb-4 px-4 py-2 bg-yellow-500 text-white font-semibold rounded hover:bg-yellow-600"
+      >
+        Download All Records (CSV)
+      </button>
     </div>
   );
 };
