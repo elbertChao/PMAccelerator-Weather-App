@@ -6,8 +6,12 @@ const Home: React.FC = () => {
   const [location, setLocation] = useState<string>('');
   const [weatherData, setWeatherData] = useState<any>(null);
   const [forecastData, setForecastData] = useState<any>(null);
+  const [googleMapUrl, setGoogleMapUrl] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [searchResults, setSearchResults] = useState<{ label: string; location: string }[]>([]);
+  const [locationDisplay, setLocationDisplay] = useState('');
+  const [locationCoords, setLocationCoords] = useState('');
 
   let tempInCelsius: number | null = null;
   let tempInFahrenheit: number | null = null;
@@ -24,6 +28,17 @@ const Home: React.FC = () => {
       windSpeedInKmh = Math.round(windSpeedInMph * 1.60934);
     }
   }
+
+  const fetchSearchResults = async (query: string): Promise<any[]> => {
+    try {
+      const res = await fetch(`http://localhost:8000/search?query=${encodeURIComponent(query)}`);
+      if (!res.ok) throw new Error("Failed to search locations");
+      return await res.json();
+    } catch (err) {
+      console.error("Search failed:", err);
+      return [];
+    }
+  };
 
   // Fetch weather data from our backend
   const fetchWeather = async (loc: string): Promise<void> => {
@@ -54,20 +69,24 @@ const Home: React.FC = () => {
       // console.log("Forecast data:", data.forecast_data); // DEBUGGING
       setWeatherData(data.weather_data);
       setForecastData(data.forecast_data);
+      setGoogleMapUrl(data.google_map_url);
     } catch (err: any) {
       setError(err.message);
       setWeatherData(null);
       setForecastData(null);
+      setGoogleMapUrl(null);
     } finally {
       setLoading(false);
     }
   };
 
   // Handler for form submission
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!location) return;
-    fetchWeather(location);
+    const loc = locationCoords || locationDisplay;
+    if (!loc) return;
+  
+    fetchWeather(loc);
   };
 
   // Use browser geolocation to get current position
@@ -138,7 +157,6 @@ const Home: React.FC = () => {
     if (days.length === 0) {
       return <p>No forecast data available.</p>;
     }
-  
     return (
       <div className="mt-8">
         <h2 className="text-2xl font-bold mb-2">5-Day Forecast</h2>
@@ -169,18 +187,75 @@ const Home: React.FC = () => {
     );
   };
 
+  // Renders Google Maps iframe if the map URL is present in the weather data
+  const renderGoogleMap = () => {
+    // console.log("Google Map URL:", googleMapUrl); // DEBUGGING
+    if (!googleMapUrl) return null;;
+
+    return (
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-2">Location Map</h2>
+        <div className="w-full h-64">
+          <iframe
+            title="Location Map"
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            style={{ border: 0 }}
+            src={googleMapUrl}
+            allowFullScreen
+          />
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-lg mx-auto p-4">
       <h1 className="text-3xl font-bold text-center mb-4">Weather App</h1>
-      <form onSubmit={handleSubmit} className="flex mb-4">
-        <input
-          type="text"
-          placeholder="Enter location (city, zip, or lat,lon)"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          className="flex-grow p-2 border rounded"
-        />
-        <button type="submit" className="ml-2 p-2 bg-blue-500 text-white rounded">
+      <form onSubmit={handleSubmit} className="relative flex mb-4 gap-2">
+        <div className="relative flex-grow">
+          <input
+            type="text"
+            placeholder="Enter location (city, zip, or lat,lon)"
+            value={locationDisplay}
+            onChange={async (e) => {
+              const value = e.target.value;
+              setLocationDisplay(value);
+              setLocationCoords(''); // clear until selected
+
+              if (value.length >= 2) {
+                const res = await fetch(`http://localhost:8000/search?query=${encodeURIComponent(value)}`);
+                const results = await res.json();
+                setSearchResults(results);
+              } else {
+                setSearchResults([]);
+              }
+            }}
+            className="w-full p-2 border border-white rounded bg-black text-white placeholder-white"
+          />
+          {searchResults.length > 0 && (
+            <ul className="absolute left-0 right-0 z-10 bg-white border border-gray-300 rounded mt-1 max-h-48 overflow-y-auto shadow-lg">
+              {searchResults.map((s, i) => (
+                <li
+                  key={i}
+                  onClick={() => {
+                    setLocationDisplay(s.label);
+                    setLocationCoords(s.location); // actual lat,lon string
+                    setSearchResults([]);
+                  }}
+                  className="px-3 py-2 text-sm text-gray-800 hover:bg-gray-200 cursor-pointer"
+                >
+                  {s.label}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <button
+          type="submit"
+          className="ml-2 p-2 bg-blue-500 text-white rounded"
+        >
           Get Weather
         </button>
       </form>
@@ -199,6 +274,7 @@ const Home: React.FC = () => {
       {error && <p className="text-center text-red-500">Error: {error}</p>}
       {renderCurrentWeather()}
       {renderForecast()}
+      {renderGoogleMap()}
     </div>
   );
 };
