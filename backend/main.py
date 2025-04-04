@@ -75,7 +75,7 @@ async def create_weather_record(request: WeatherRequest):
         )
     forecast_data = forecast_response.json()
 
-    youtube_videos = []
+    youtube_videos = [] # not implemented yet, just a placeholder
     GOOGLE_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
     if not GOOGLE_API_KEY:
         raise HTTPException(status_code=500, detail="Google Maps API key not configured")

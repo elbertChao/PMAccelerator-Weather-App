@@ -46,7 +46,7 @@ const Home: React.FC = () => {
       setLoading(true);
       setError('');
 
-      // For demonstration, we use today's date as both start and end of the date range.
+      // Just use today's date as both start and end of the date range.
       const today = new Date().toISOString().split('T')[0];
       const body = {
         location: loc,
@@ -89,7 +89,7 @@ const Home: React.FC = () => {
     fetchWeather(loc);
   };
 
-  // Use browser geolocation to get current position
+  // Use browser's geolocation to get current position
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser');
@@ -241,7 +241,7 @@ const Home: React.FC = () => {
                 <li
                   key={i}
                   onClick={() => {
-                    setLocationDisplay(s.label);
+                    setLocationDisplay(s.label); // location name
                     setLocationCoords(s.location); // actual lat,lon string
                     setSearchResults([]);
                   }}
